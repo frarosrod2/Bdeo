@@ -1,0 +1,1 @@
+- Al generar el contrato OpenAPI, la IA incluyó un campo 'score' y un status 'Cancelled' no visibles. Además, omitió la obligatoriedad de ciertos campos según la regla 2.3. Corregí el contrato para alinearlo estrictamente con el documento de requisitos (SDD).

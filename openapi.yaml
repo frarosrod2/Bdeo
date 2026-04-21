@@ -1,0 +1,557 @@
+openapi: 3.0.3
+info:
+  title: Claims Management System API
+  description: |
+    RESTful API for managing insurance claims and their associated damages.
+    Developed for Bdeo Full Stack Technical Case.
+  version: 1.0.0
+  contact:
+    name: Bdeo Technical Case
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+
+tags:
+  - name: Claims
+    description: Operations on claims
+  - name: Damages
+    description: Operations on damages associated to a claim
+
+# ──────────────────────────────────────────────
+# PATHS
+# ──────────────────────────────────────────────
+paths:
+
+  # ── Claims collection ──────────────────────
+  /claims:
+    get:
+      tags: [Claims]
+      summary: List all claims
+      operationId: listClaims
+      responses:
+        '200':
+          description: Array of claims
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Claim'
+
+    post:
+      tags: [Claims]
+      summary: Create a new claim
+      operationId: createClaim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClaimDto'
+      responses:
+        '201':
+          description: Claim created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ── Single claim ───────────────────────────
+  /claims/{claimId}:
+    parameters:
+      - $ref: '#/components/parameters/claimId'
+
+    get:
+      tags: [Claims]
+      summary: Get claim by ID
+      operationId: getClaimById
+      responses:
+        '200':
+          description: Claim detail with damages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimWithDamages'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Claims]
+      summary: Update claim fields (title, description)
+      operationId: updateClaim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClaimDto'
+      responses:
+        '200':
+          description: Updated claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Claims]
+      summary: Delete a claim and its damages
+      operationId: deleteClaim
+      responses:
+        '204':
+          description: Claim deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Status transition ──────────────────────
+  /claims/{claimId}/status:
+    parameters:
+      - $ref: '#/components/parameters/claimId'
+
+    patch:
+      tags: [Claims]
+      summary: Transition claim status
+      operationId: updateClaimStatus
+      description: |
+        Allowed transitions:
+        - `Pending` → `InReview`
+        - `InReview` → `Finished`
+        - `InReview` → `Pending`
+
+        **Business rule:** A claim with at least one `high`-severity damage
+        requires `description` longer than 100 characters before transitioning
+        to `Finished`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClaimStatusDto'
+      responses:
+        '200':
+          description: Updated claim with new status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Business rule violation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidTransition:
+                  summary: Invalid status transition
+                  value:
+                    statusCode: 422
+                    error: UnprocessableEntity
+                    message: "Transition from Finished to Pending is not allowed."
+                highSeverityDescription:
+                  summary: High severity requires long description
+                  value:
+                    statusCode: 422
+                    error: UnprocessableEntity
+                    message: "Claim has high-severity damages. Description must exceed 100 characters to mark as Finished."
+
+  # ── Damages collection ─────────────────────
+  /claims/{claimId}/damages:
+    parameters:
+      - $ref: '#/components/parameters/claimId'
+
+    get:
+      tags: [Damages]
+      summary: List damages for a claim
+      operationId: listDamages
+      responses:
+        '200':
+          description: Array of damages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Damage'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Damages]
+      summary: Add a damage to a claim
+      operationId: createDamage
+      description: |
+        **Business rule:** Damages can only be added when the claim status is `Pending`.
+        All fields are mandatory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDamageDto'
+      responses:
+        '201':
+          description: Damage created. The claim's totalAmount is recalculated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Damage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Claim is not in Pending status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                statusCode: 422
+                error: UnprocessableEntity
+                message: "Damages can only be managed when the claim is in Pending status."
+
+  # ── Single damage ──────────────────────────
+  /claims/{claimId}/damages/{damageId}:
+    parameters:
+      - $ref: '#/components/parameters/claimId'
+      - $ref: '#/components/parameters/damageId'
+
+    get:
+      tags: [Damages]
+      summary: Get a single damage
+      operationId: getDamageById
+      responses:
+        '200':
+          description: Damage detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Damage'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Damages]
+      summary: Update a damage
+      operationId: updateDamage
+      description: |
+        **Business rule:** Only allowed when claim status is `Pending`.
+        Updating `price` triggers recalculation of `totalAmount` on the parent claim.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDamageDto'
+      responses:
+        '200':
+          description: Updated damage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Damage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Claim is not in Pending status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Damages]
+      summary: Delete a damage
+      operationId: deleteDamage
+      description: |
+        **Business rule:** Only allowed when claim status is `Pending`.
+        Triggers recalculation of `totalAmount` on the parent claim.
+      responses:
+        '204':
+          description: Damage deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Claim is not in Pending status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# ──────────────────────────────────────────────
+# COMPONENTS
+# ──────────────────────────────────────────────
+components:
+
+  # ── Parameters ────────────────────────────
+  parameters:
+    claimId:
+      name: claimId
+      in: path
+      required: true
+      description: MongoDB ObjectId of the claim
+      schema:
+        type: string
+        pattern: '^[a-f\d]{24}$'
+        example: '664f1a2b3c4d5e6f7a8b9c0d'
+
+    damageId:
+      name: damageId
+      in: path
+      required: true
+      description: MongoDB ObjectId of the damage
+      schema:
+        type: string
+        pattern: '^[a-f\d]{24}$'
+        example: '664f1a2b3c4d5e6f7a8b9c0e'
+
+  # ── Reusable responses ─────────────────────
+  responses:
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            statusCode: 400
+            error: BadRequest
+            message: "Validation failed: price must be a positive number."
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            statusCode: 404
+            error: NotFound
+            message: "Claim with id '664f1a2b3c4d5e6f7a8b9c0d' not found."
+
+  # ── Schemas ────────────────────────────────
+  schemas:
+
+    # Enums
+    ClaimStatus:
+      type: string
+      enum:
+        - Pending
+        - InReview
+        - Finished
+      description: |
+        Allowed status transitions:
+        - Pending → InReview
+        - InReview → Finished
+        - InReview → Pending
+
+    Severity:
+      type: string
+      enum:
+        - low
+        - mid
+        - high
+
+    # Core entities
+    Claim:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - status
+        - totalAmount
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+          example: '664f1a2b3c4d5e6f7a8b9c0d'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: 'Front bumper collision'
+        description:
+          type: string
+          maxLength: 2000
+          example: 'Vehicle hit a bollard at low speed causing front bumper deformation.'
+        status:
+          $ref: '#/components/schemas/ClaimStatus'
+        totalAmount:
+          type: number
+          format: float
+          minimum: 0
+          description: Calculated sum of all associated damage prices
+          example: 1250.00
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ClaimWithDamages:
+      allOf:
+        - $ref: '#/components/schemas/Claim'
+        - type: object
+          properties:
+            damages:
+              type: array
+              items:
+                $ref: '#/components/schemas/Damage'
+
+    Damage:
+      type: object
+      required:
+        - id
+        - claimId
+        - part
+        - severity
+        - imageUrl
+        - price
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          example: '664f1a2b3c4d5e6f7a8b9c0e'
+        claimId:
+          type: string
+          description: Reference to the parent claim
+          example: '664f1a2b3c4d5e6f7a8b9c0d'
+        part:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Vehicle or asset part affected
+          example: 'Front bumper'
+        severity:
+          $ref: '#/components/schemas/Severity'
+        imageUrl:
+          type: string
+          format: uri
+          example: 'https://storage.bdeo.io/images/damage-001.jpg'
+        price:
+          type: number
+          format: float
+          minimum: 0
+          example: 750.00
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # DTOs — Create / Update
+    CreateClaimDto:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: 'Front bumper collision'
+        description:
+          type: string
+          maxLength: 2000
+          example: 'Vehicle hit a bollard at low speed.'
+
+    UpdateClaimDto:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+
+    UpdateClaimStatusDto:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/ClaimStatus'
+
+    CreateDamageDto:
+      type: object
+      required:
+        - part
+        - severity
+        - imageUrl
+        - price
+      properties:
+        part:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Front bumper'
+        severity:
+          $ref: '#/components/schemas/Severity'
+        imageUrl:
+          type: string
+          format: uri
+          example: 'https://storage.bdeo.io/images/damage-001.jpg'
+        price:
+          type: number
+          format: float
+          minimum: 0
+          example: 750.00
+
+    UpdateDamageDto:
+      type: object
+      minProperties: 1
+      properties:
+        part:
+          type: string
+          minLength: 1
+          maxLength: 100
+        severity:
+          $ref: '#/components/schemas/Severity'
+        imageUrl:
+          type: string
+          format: uri
+        price:
+          type: number
+          format: float
+          minimum: 0
+
+    # Error envelope
+    ErrorResponse:
+      type: object
+      required:
+        - statusCode
+        - error
+        - message
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: BadRequest
+        message:
+          type: string
+          example: 'Validation failed.'
