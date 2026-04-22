@@ -3,8 +3,10 @@ import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotFoundError } from "../../src/common/errors/http-errors";
 import { ClaimController } from "../../src/controllers/claim.controller";
-import { ClaimStatus, IClaim } from "../../src/models/claim.model";
-import { ClaimService } from "../../src/services/claim.service";
+import { ClaimStatus, ClaimWithDamages, IClaim } from "../../src/models/claim.model";
+import {
+  ClaimService,
+} from "../../src/services/claim.service";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -18,7 +20,23 @@ function makeClaim(overrides: Partial<IClaim> = {}): IClaim {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as unknown as IClaim;
+  } as IClaim;
+}
+
+function makeClaimWithDamages(
+  overrides: Partial<ClaimWithDamages> = {},
+): ClaimWithDamages {
+  return {
+    _id: new Types.ObjectId(),
+    title: "Claim",
+    description: "Desc",
+    status: ClaimStatus.PENDING,
+    totalAmount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    damages: [],
+    ...overrides,
+  };
 }
 
 function makeReq(overrides: Partial<Request> = {}): Request {
@@ -87,8 +105,8 @@ describe("ClaimController", () => {
 
   describe("getById", () => {
     it("responds 200 with claim detail", async () => {
-      const claim = makeClaim();
-      vi.mocked(service.findById).mockResolvedValue(claim as any);
+      const claimWithDamages = makeClaimWithDamages();
+      vi.mocked(service.findById).mockResolvedValue(claimWithDamages);
 
       const req = makeReq({ params: { claimId: "abc" } });
       const res = makeRes();
@@ -96,7 +114,7 @@ describe("ClaimController", () => {
       await ctrl.getById(req, res, next);
 
       expect(service.findById).toHaveBeenCalledWith("abc");
-      expect(res.json).toHaveBeenCalledWith(claim);
+      expect(res.json).toHaveBeenCalledWith(claimWithDamages);
     });
 
     it("calls next on NotFoundError", async () => {

@@ -4,10 +4,8 @@ import {
   UnprocessableEntityError,
 } from "../common/errors/http-errors";
 import { IDamage } from "../models/damage.model";
-import {
-  IClaimRepository,
-  IDamageRepository,
-} from "../repositories/interfaces/repository.interfaces";
+import { IClaimRepository } from "../repositories/interfaces/claim-repository.interface";
+import { IDamageRepository } from "../repositories/interfaces/damage-repository.interface";
 
 export class DamageService {
   constructor(
@@ -64,9 +62,7 @@ export class DamageService {
   async update(
     claimId: string,
     damageId: string,
-    data: Partial<
-      Pick<IDamage, "part" | "severity" | "imageUrl" | "price">
-    >,
+    data: Partial<Pick<IDamage, "part" | "severity" | "imageUrl" | "price">>,
   ): Promise<IDamage> {
     await this.assertClaimPending(claimId);
 

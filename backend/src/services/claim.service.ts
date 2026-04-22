@@ -2,21 +2,10 @@ import {
   NotFoundError,
   UnprocessableEntityError,
 } from "../common/errors/http-errors";
-import { ClaimStatus, IClaim } from "../models/claim.model";
-import { IDamage } from "../models/damage.model";
+import { ClaimStatus, ClaimWithDamages, IClaim } from "../models/claim.model";
 import { IClaimRepository } from "../repositories/interfaces/claim-repository.interface";
 import { IDamageRepository } from "../repositories/interfaces/damage-repository.interface";
 
-export interface ClaimWithDamages {
-  _id: IClaim["_id"];
-  title: string;
-  description: string;
-  status: ClaimStatus;
-  totalAmount: number;
-  createdAt: Date;
-  updatedAt: Date;
-  damages: IDamage[];
-}
 const ALLOWED_TRANSITIONS: Record<ClaimStatus, ClaimStatus[]> = {
   [ClaimStatus.PENDING]: [ClaimStatus.IN_REVIEW],
   [ClaimStatus.IN_REVIEW]: [ClaimStatus.FINISHED, ClaimStatus.PENDING],
@@ -38,7 +27,7 @@ export class ClaimService {
     if (!claim) throw new UnprocessableEntityError(`Claim '${id}' not found.`);
 
     const damages = await this.damageRepo.findByClaimId(id);
-    return { ...(claim as unknown as ClaimWithDamages), damages };
+    return { ...claim, damages };
   }
 
   async create(data: { title: string; description: string }): Promise<IClaim> {
@@ -68,7 +57,6 @@ export class ClaimService {
       );
     }
 
-    // Business rule: high severity requires description > 100 chars to finish
     if (newStatus === "Finished") {
       const damages = await this.damageRepo.findByClaimId(id);
       const hasHighSeverity = damages.some((d) => d.severity === "high");

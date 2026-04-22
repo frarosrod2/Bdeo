@@ -1,13 +1,13 @@
 import { Router } from "express";
-import {
-  createDamageSchema,
-  damageParamsSchema,
-  updateDamageSchema,
-} from "../common/utils/schemas";
 import { DamageController } from "../controllers/damage.controller";
 import { validateMiddleware } from "../middlewares/validate.middleware";
 import { claimIdSchema } from "../schemas/claim.schema";
 import { DamageService } from "../services/damage.service";
+import {
+  createDamageSchema,
+  damageParamsSchema,
+  updateDamageSchema,
+} from "../schemas/damage.schema";
 
 export function createDamageRouter(damageService: DamageService): Router {
   // mergeParams exposes :claimId from the parent router

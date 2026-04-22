@@ -26,7 +26,7 @@ export function createClaimRouter(claimService: ClaimService): Router {
     ctrl.getById,
   );
 
-  // PATCH /claims/:claimId/status — registered before /:claimId to avoid shadowing
+  // PATCH /claims/:claimId/status
   router.patch(
     "/:claimId/status",
     validateMiddleware(claimIdSchema, "params"),
