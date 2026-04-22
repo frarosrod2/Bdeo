@@ -9,8 +9,8 @@ import { IDamage } from "../../src/models/damage.model";
 import { IClaimRepository } from "../../src/repositories/interfaces/claim-repository.interface";
 import { IDamageRepository } from "../../src/repositories/interfaces/damage-repository.interface";
 import { ClaimService } from "../../src/services/claim.service";
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function makeId() {
   return new Types.ObjectId().toHexString();
 }

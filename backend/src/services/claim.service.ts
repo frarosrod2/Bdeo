@@ -49,7 +49,6 @@ export class ClaimService {
     const claim = await this.claimRepo.findById(id);
     if (!claim) throw new NotFoundError(`Claim '${id}' not found.`);
 
-    // Validate transition
     const allowed = ALLOWED_TRANSITIONS[claim.status];
     if (!allowed.includes(newStatus)) {
       throw new UnprocessableEntityError(
