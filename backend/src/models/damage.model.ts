@@ -1,6 +1,10 @@
 import { Document, Schema, Types, model } from "mongoose";
 
-export type Severity = "low" | "mid" | "high";
+export enum Severity {
+  LOW = "low",
+  MID = "mid",
+  HIGH = "high",
+}
 
 export interface IDamage {
   _id: Types.ObjectId;
