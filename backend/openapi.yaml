@@ -38,6 +38,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Claim'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     post:
       tags: [Claims]
@@ -58,6 +60,8 @@ paths:
                 $ref: '#/components/schemas/Claim'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ── Single claim ───────────────────────────
   /claims/{claimId}:
@@ -68,6 +72,11 @@ paths:
       tags: [Claims]
       summary: Get claim by ID
       operationId: getClaimById
+      description: |
+        Returns the claim with its associated damages array.
+
+        **Note:** Returns `422 UnprocessableEntity` when the claim is not found
+        (instead of 404), matching the current service implementation.
       responses:
         '200':
           description: Claim detail with damages
@@ -75,8 +84,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClaimWithDamages'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          description: Claim not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                statusCode: 422
+                error: UnprocessableEntity
+                message: "Claim '664f1a2b3c4d5e6f7a8b9c0d' not found."
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     patch:
       tags: [Claims]
@@ -99,16 +120,23 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     delete:
       tags: [Claims]
-      summary: Delete a claim and its damages
+      summary: Delete a claim
       operationId: deleteClaim
+      description: |
+        Deletes the claim. Associated damages are **not** automatically removed
+        and must be deleted beforehand if referential integrity is required.
       responses:
         '204':
           description: Claim deleted
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ── Status transition ──────────────────────
   /claims/{claimId}/status:
@@ -157,13 +185,15 @@ paths:
                   value:
                     statusCode: 422
                     error: UnprocessableEntity
-                    message: "Transition from Finished to Pending is not allowed."
+                    message: "Transition from 'Finished' to 'Pending' is not allowed."
                 highSeverityDescription:
                   summary: High severity requires long description
                   value:
                     statusCode: 422
                     error: UnprocessableEntity
                     message: "Claim has high-severity damages. Description must exceed 100 characters to mark as Finished."
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ── Damages collection ─────────────────────
   /claims/{claimId}/damages:
@@ -183,8 +213,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Damage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     post:
       tags: [Damages]
@@ -193,6 +227,8 @@ paths:
       description: |
         **Business rule:** Damages can only be added when the claim status is `Pending`.
         All fields are mandatory.
+
+        Creating a damage triggers recalculation of `totalAmount` on the parent claim.
       requestBody:
         required: true
         content:
@@ -220,6 +256,8 @@ paths:
                 statusCode: 422
                 error: UnprocessableEntity
                 message: "Damages can only be managed when the claim is in Pending status."
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ── Single damage ──────────────────────────
   /claims/{claimId}/damages/{damageId}:
@@ -231,6 +269,11 @@ paths:
       tags: [Damages]
       summary: Get a single damage
       operationId: getDamageById
+      description: |
+        Returns the damage identified by `damageId`.
+
+        **Note:** The current implementation looks up the damage by its own ID
+        globally and does not enforce that it belongs to the specified `claimId`.
       responses:
         '200':
           description: Damage detail
@@ -238,8 +281,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Damage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     patch:
       tags: [Damages]
@@ -248,6 +295,9 @@ paths:
       description: |
         **Business rule:** Only allowed when claim status is `Pending`.
         Updating `price` triggers recalculation of `totalAmount` on the parent claim.
+
+        **Note:** The current implementation does not verify that the damage
+        belongs to the specified claim — it is looked up by `damageId` globally.
       requestBody:
         required: true
         content:
@@ -271,6 +321,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                statusCode: 422
+                error: UnprocessableEntity
+                message: "Damages can only be managed when the claim is in Pending status."
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     delete:
       tags: [Damages]
@@ -282,6 +338,8 @@ paths:
       responses:
         '204':
           description: Damage deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -290,6 +348,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                statusCode: 422
+                error: UnprocessableEntity
+                message: "Damages can only be managed when the claim is in Pending status."
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 # ──────────────────────────────────────────────
 # COMPONENTS
@@ -302,26 +366,26 @@ components:
       name: claimId
       in: path
       required: true
-      description: MongoDB ObjectId of the claim
+      description: MongoDB ObjectId of the claim (24 hex chars, case-insensitive)
       schema:
         type: string
-        pattern: '^[a-f\d]{24}$'
+        pattern: '^[a-fA-F\d]{24}$'
         example: '664f1a2b3c4d5e6f7a8b9c0d'
 
     damageId:
       name: damageId
       in: path
       required: true
-      description: MongoDB ObjectId of the damage
+      description: MongoDB ObjectId of the damage (24 hex chars, case-insensitive)
       schema:
         type: string
-        pattern: '^[a-f\d]{24}$'
+        pattern: '^[a-fA-F\d]{24}$'
         example: '664f1a2b3c4d5e6f7a8b9c0e'
 
   # ── Reusable responses ─────────────────────
   responses:
     BadRequest:
-      description: Validation error
+      description: Validation error (Zod)
       content:
         application/json:
           schema:
@@ -329,7 +393,7 @@ components:
           example:
             statusCode: 400
             error: BadRequest
-            message: "Validation failed: price must be a positive number."
+            message: "Title is required"
 
     NotFound:
       description: Resource not found
@@ -340,7 +404,18 @@ components:
           example:
             statusCode: 404
             error: NotFound
-            message: "Claim with id '664f1a2b3c4d5e6f7a8b9c0d' not found."
+            message: "Claim '664f1a2b3c4d5e6f7a8b9c0d' not found."
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            statusCode: 500
+            error: InternalServerError
+            message: "An unexpected error occurred."
 
   # ── Schemas ────────────────────────────────
   schemas:
@@ -369,7 +444,7 @@ components:
     Claim:
       type: object
       required:
-        - id
+        - _id
         - title
         - description
         - status
@@ -377,7 +452,7 @@ components:
         - createdAt
         - updatedAt
       properties:
-        id:
+        _id:
           type: string
           description: MongoDB ObjectId
           example: '664f1a2b3c4d5e6f7a8b9c0d'
@@ -388,6 +463,7 @@ components:
           example: 'Front bumper collision'
         description:
           type: string
+          minLength: 1
           maxLength: 2000
           example: 'Vehicle hit a bollard at low speed causing front bumper deformation.'
         status:
@@ -418,7 +494,7 @@ components:
     Damage:
       type: object
       required:
-        - id
+        - _id
         - claimId
         - part
         - severity
@@ -427,7 +503,7 @@ components:
         - createdAt
         - updatedAt
       properties:
-        id:
+        _id:
           type: string
           example: '664f1a2b3c4d5e6f7a8b9c0e'
         claimId:
@@ -472,6 +548,7 @@ components:
           example: 'Front bumper collision'
         description:
           type: string
+          minLength: 1
           maxLength: 2000
           example: 'Vehicle hit a bollard at low speed.'
 
@@ -485,6 +562,7 @@ components:
           maxLength: 200
         description:
           type: string
+          minLength: 1
           maxLength: 2000
 
     UpdateClaimStatusDto:
