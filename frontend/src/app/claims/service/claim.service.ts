@@ -2,15 +2,16 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ClaimResponse } from '../model/api/claim-response';
+import { ClaimWithDamagesResponse } from '../model/api/claim-with-damages-response';
 import { Claim, ClaimStatus, ClaimWithDamages, CreateClaimDto } from '../model/claim';
 import { mapDamageResponse } from '../util/damage-mapper';
 import { isClaimStatus } from '../util/is-claim-status';
-import { ClaimWithDamagesResponse } from '../model/api/claim-with-damages-response';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ClaimService {
   private readonly http = inject(HttpClient);
-  private readonly base = 'http://localhost:3000/api/claims';
+  private readonly base = `${environment.apiUrl}/claims`;
 
   getAll(): Observable<Claim[]> {
     return this.http

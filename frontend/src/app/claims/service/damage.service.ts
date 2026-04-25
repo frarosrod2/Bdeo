@@ -4,11 +4,12 @@ import { map, Observable } from 'rxjs';
 import { DamageResponse } from '../model/api/damage-response';
 import { CreateDamageDto, Damage, UpdateDamageDto } from '../model/damage';
 import { mapDamageResponse } from '../util/damage-mapper';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DamageService {
   private readonly http = inject(HttpClient);
-  private readonly base = 'http://localhost:3000/api/claims';
+  private readonly base = `${environment.apiUrl}/claims`;
 
   create(claimId: string, dto: CreateDamageDto): Observable<Damage> {
     return this.http
