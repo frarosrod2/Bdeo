@@ -108,7 +108,7 @@ Current coverage: **100 % Statements · 100 % Branches · 100 % Functions · 100
 
 ## API overview
 
-The full contract is defined in [`openapi.yaml`](./openapi.yaml).
+The full contract is defined in [`openapi.yaml`](./backend/openapi.yaml).
 
 | Method | Endpoint                                 | Description                          |
 | ------ | ---------------------------------------- | ------------------------------------ |
