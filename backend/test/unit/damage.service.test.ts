@@ -5,7 +5,7 @@ import {
   UnprocessableEntityError,
 } from "../../src/common/errors/http-errors";
 import { ClaimStatus, IClaim } from "../../src/models/claim.model";
-import { IDamage } from "../../src/models/damage.model";
+import { IDamage, Severity } from "../../src/models/damage.model";
 import { IClaimRepository } from "../../src/repositories/interfaces/claim-repository.interface";
 import { IDamageRepository } from "../../src/repositories/interfaces/damage-repository.interface";
 import { DamageService } from "../../src/services/damage.service";
@@ -26,7 +26,7 @@ function makeClaim(overrides: Partial<IClaim> = {}): IClaim {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as unknown as IClaim;
+  };
 }
 
 function makeDamage(overrides: Partial<IDamage> = {}): IDamage {
@@ -34,13 +34,13 @@ function makeDamage(overrides: Partial<IDamage> = {}): IDamage {
     _id: new Types.ObjectId(),
     claimId: new Types.ObjectId(),
     part: "Door",
-    severity: "low",
+    severity: Severity.LOW,
     imageUrl: "https://example.com/img.jpg",
     price: 200,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as unknown as IDamage;
+  };
 }
 
 function makeClaimRepo(
@@ -162,7 +162,7 @@ describe("DamageService", () => {
 
       const result = await service.create(claimId, {
         part: "Bumper",
-        severity: "low",
+        severity: Severity.LOW,
         imageUrl: "https://example.com/img.jpg",
         price: 300,
       });
@@ -180,7 +180,7 @@ describe("DamageService", () => {
       await expect(
         service.create(makeId(), {
           part: "Hood",
-          severity: "mid",
+          severity: Severity.MID,
           imageUrl: "https://example.com/img.jpg",
           price: 100,
         }),
@@ -193,7 +193,7 @@ describe("DamageService", () => {
       await expect(
         service.create(makeId(), {
           part: "Hood",
-          severity: "mid",
+          severity: Severity.MID,
           imageUrl: "https://example.com/img.jpg",
           price: 100,
         }),

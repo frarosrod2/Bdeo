@@ -1,10 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NotFoundError, UnprocessableEntityError } from "../../src/common/errors/http-errors";
-import { IDamage } from "../../src/models/damage.model";
-import { DamageService } from "../../src/services/damage.service";
+import {
+  NotFoundError,
+  UnprocessableEntityError,
+} from "../../src/common/errors/http-errors";
 import { DamageController } from "../../src/controllers/damage.controller";
+import { IDamage, Severity } from "../../src/models/damage.model";
+import { DamageService } from "../../src/services/damage.service";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -13,17 +16,17 @@ function makeDamage(overrides: Partial<IDamage> = {}): IDamage {
     _id: new Types.ObjectId(),
     claimId: new Types.ObjectId(),
     part: "Bumper",
-    severity: "low",
+    severity: Severity.LOW,
     imageUrl: "https://example.com/img.jpg",
     price: 100,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as unknown as IDamage;
+  };
 }
 
 function makeReq(overrides: Partial<Request> = {}): Request {
-  return { params: {}, body: {}, ...overrides } as unknown as Request;
+  return { params: {}, body: {}, ...overrides } as Request;
 }
 
 function makeRes(): Response {

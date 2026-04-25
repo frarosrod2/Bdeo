@@ -3,10 +3,12 @@ import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotFoundError } from "../../src/common/errors/http-errors";
 import { ClaimController } from "../../src/controllers/claim.controller";
-import { ClaimStatus, ClaimWithDamages, IClaim } from "../../src/models/claim.model";
 import {
-  ClaimService,
-} from "../../src/services/claim.service";
+  ClaimStatus,
+  ClaimWithDamages,
+  IClaim,
+} from "../../src/models/claim.model";
+import { ClaimService } from "../../src/services/claim.service";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -20,7 +22,7 @@ function makeClaim(overrides: Partial<IClaim> = {}): IClaim {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as IClaim;
+  };
 }
 
 function makeClaimWithDamages(
@@ -40,7 +42,7 @@ function makeClaimWithDamages(
 }
 
 function makeReq(overrides: Partial<Request> = {}): Request {
-  return { params: {}, body: {}, ...overrides } as unknown as Request;
+  return { params: {}, body: {}, ...overrides } as Request;
 }
 
 function makeRes(): Response {

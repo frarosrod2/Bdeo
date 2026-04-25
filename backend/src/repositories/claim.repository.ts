@@ -16,7 +16,7 @@ export class ClaimRepository implements IClaimRepository {
       status: "Pending",
       totalAmount: 0,
     });
-    return claim.toObject() as IClaim;
+    return claim.toObject();
   }
 
   async update(

@@ -5,7 +5,7 @@ import {
   UnprocessableEntityError,
 } from "../../src/common/errors/http-errors";
 import { ClaimStatus, IClaim } from "../../src/models/claim.model";
-import { IDamage } from "../../src/models/damage.model";
+import { IDamage, Severity } from "../../src/models/damage.model";
 import { IClaimRepository } from "../../src/repositories/interfaces/claim-repository.interface";
 import { IDamageRepository } from "../../src/repositories/interfaces/damage-repository.interface";
 import { ClaimService } from "../../src/services/claim.service";
@@ -25,7 +25,7 @@ function makeClaim(overrides: Partial<IClaim> = {}): IClaim {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as unknown as IClaim;
+  };
 }
 
 function makeDamage(overrides: Partial<IDamage> = {}): IDamage {
@@ -33,13 +33,13 @@ function makeDamage(overrides: Partial<IDamage> = {}): IDamage {
     _id: new Types.ObjectId(),
     claimId: new Types.ObjectId(),
     part: "Bumper",
-    severity: "low",
+    severity: Severity.LOW,
     imageUrl: "https://example.com/img.jpg",
     price: 100,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as unknown as IDamage;
+  };
 }
 
 // ── Mock factories ────────────────────────────────────────────────────────────
@@ -201,7 +201,7 @@ describe("ClaimService", () => {
 
       vi.mocked(claimRepo.findById).mockResolvedValue(claim);
       vi.mocked(damageRepo.findByClaimId).mockResolvedValue([
-        makeDamage({ severity: "low" }),
+        makeDamage({ severity: Severity.LOW }),
       ]);
       vi.mocked(claimRepo.updateStatus).mockResolvedValue(updated);
 
@@ -221,7 +221,7 @@ describe("ClaimService", () => {
 
       vi.mocked(claimRepo.findById).mockResolvedValue(claim);
       vi.mocked(damageRepo.findByClaimId).mockResolvedValue([
-        makeDamage({ severity: "high" }),
+        makeDamage({ severity: Severity.HIGH }),
       ]);
       vi.mocked(claimRepo.updateStatus).mockResolvedValue(updated);
 
@@ -239,7 +239,7 @@ describe("ClaimService", () => {
 
       vi.mocked(claimRepo.findById).mockResolvedValue(claim);
       vi.mocked(damageRepo.findByClaimId).mockResolvedValue([
-        makeDamage({ severity: "high" }),
+        makeDamage({ severity: Severity.HIGH }),
       ]);
 
       await expect(

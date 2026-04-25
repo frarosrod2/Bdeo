@@ -1,12 +1,11 @@
 import { Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ClaimStatus, IClaim } from "../../src/models/claim.model";
-import { IDamage } from "../../src/models/damage.model";
+import { IDamage, Severity } from "../../src/models/damage.model";
 import { IClaimRepository } from "../../src/repositories/interfaces/claim-repository.interface";
 import { IDamageRepository } from "../../src/repositories/interfaces/damage-repository.interface";
 import { ClaimService } from "../../src/services/claim.service";
 import { DamageService } from "../../src/services/damage.service";
-
 
 function buildInMemoryRepos() {
   const claims = new Map<string, IClaim>();
@@ -18,14 +17,14 @@ function buildInMemoryRepos() {
     findById: vi.fn(async (id: string) => claims.get(id) ?? null),
 
     create: vi.fn(async (data) => {
-      const claim = {
+      const claim: IClaim = {
         _id: new Types.ObjectId(),
         ...data,
         status: ClaimStatus.PENDING,
         totalAmount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as unknown as IClaim;
+      };
       claims.set(claim._id.toHexString(), claim);
       return claim;
     }),
@@ -33,25 +32,25 @@ function buildInMemoryRepos() {
     update: vi.fn(async (id, data) => {
       const c = claims.get(id);
       if (!c) return null;
-      const updated = { ...c, ...data, updatedAt: new Date() } as IClaim;
-      claims.set(id, updated);
-      return updated;
+      const updatedClaim: IClaim = { ...c, ...data, updatedAt: new Date() };
+      claims.set(id, updatedClaim);
+      return updatedClaim;
     }),
 
     updateStatus: vi.fn(async (id, status) => {
       const c = claims.get(id);
       if (!c) return null;
-      const updated = { ...c, status, updatedAt: new Date() } as IClaim;
-      claims.set(id, updated);
-      return updated;
+      const updatedClaim: IClaim = { ...c, status, updatedAt: new Date() };
+      claims.set(id, updatedClaim);
+      return updatedClaim;
     }),
 
     updateTotalAmount: vi.fn(async (id, totalAmount) => {
       const c = claims.get(id);
       if (!c) return null;
-      const updated = { ...c, totalAmount, updatedAt: new Date() } as IClaim;
-      claims.set(id, updated);
-      return updated;
+      const updatedClaim: IClaim = { ...c, totalAmount, updatedAt: new Date() };
+      claims.set(id, updatedClaim);
+      return updatedClaim;
     }),
 
     delete: vi.fn(async (id) => {
@@ -67,12 +66,12 @@ function buildInMemoryRepos() {
     findById: vi.fn(async (id: string) => damages.get(id) ?? null),
 
     create: vi.fn(async (data) => {
-      const damage = {
+      const damage: IDamage = {
         _id: new Types.ObjectId(),
         ...data,
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as unknown as IDamage;
+      };
       damages.set(damage._id.toHexString(), damage);
       return damage;
     }),
@@ -80,9 +79,9 @@ function buildInMemoryRepos() {
     update: vi.fn(async (id, data) => {
       const d = damages.get(id);
       if (!d) return null;
-      const updated = { ...d, ...data, updatedAt: new Date() } as IDamage;
-      damages.set(id, updated);
-      return updated;
+      const updatedDamage: IDamage = { ...d, ...data, updatedAt: new Date() };
+      damages.set(id, updatedDamage);
+      return updatedDamage;
     }),
 
     delete: vi.fn(async (id) => {
@@ -132,7 +131,7 @@ describe("Integration: totalAmount = sum of damage prices", () => {
 
     await damageService.create(claimId, {
       part: "Bumper",
-      severity: "low",
+      severity: Severity.LOW,
       imageUrl: "https://example.com/a.jpg",
       price: 300,
     });
@@ -147,19 +146,19 @@ describe("Integration: totalAmount = sum of damage prices", () => {
 
     await damageService.create(claimId, {
       part: "Hood",
-      severity: "low",
+      severity: Severity.LOW,
       imageUrl: "https://example.com/a.jpg",
       price: 200,
     });
     await damageService.create(claimId, {
       part: "Door",
-      severity: "mid",
+      severity: Severity.MID,
       imageUrl: "https://example.com/b.jpg",
       price: 450,
     });
     await damageService.create(claimId, {
       part: "Roof",
-      severity: "high",
+      severity: Severity.HIGH,
       imageUrl: "https://example.com/c.jpg",
       price: 1050,
     });
@@ -174,13 +173,13 @@ describe("Integration: totalAmount = sum of damage prices", () => {
 
     await damageService.create(claimId, {
       part: "Hood",
-      severity: "low",
+      severity: Severity.LOW,
       imageUrl: "https://example.com/a.jpg",
       price: 200,
     });
     const d2 = await damageService.create(claimId, {
       part: "Door",
-      severity: "mid",
+      severity: Severity.MID,
       imageUrl: "https://example.com/b.jpg",
       price: 300,
     });
@@ -200,13 +199,13 @@ describe("Integration: totalAmount = sum of damage prices", () => {
 
     const d1 = await damageService.create(claimId, {
       part: "Hood",
-      severity: "low",
+      severity: Severity.LOW,
       imageUrl: "https://example.com/a.jpg",
       price: 400,
     });
     await damageService.create(claimId, {
       part: "Door",
-      severity: "mid",
+      severity: Severity.MID,
       imageUrl: "https://example.com/b.jpg",
       price: 100,
     });
@@ -224,13 +223,13 @@ describe("Integration: totalAmount = sum of damage prices", () => {
 
     const d1 = await damageService.create(claimId, {
       part: "Hood",
-      severity: "low",
+      severity: Severity.LOW,
       imageUrl: "https://example.com/a.jpg",
       price: 250,
     });
     const d2 = await damageService.create(claimId, {
       part: "Door",
-      severity: "mid",
+      severity: Severity.MID,
       imageUrl: "https://example.com/b.jpg",
       price: 350,
     });
@@ -247,7 +246,7 @@ describe("Integration: totalAmount = sum of damage prices", () => {
 
     const d = await damageService.create(claimId, {
       part: "Bumper",
-      severity: "low",
+      severity: Severity.LOW,
       imageUrl: "https://example.com/a.jpg",
       price: 600,
     });
@@ -273,7 +272,7 @@ describe("Integration: totalAmount = sum of damage prices", () => {
     for (const price of prices) {
       const d = await damageService.create(claimId, {
         part: "Part",
-        severity: "low",
+        severity: Severity.LOW,
         imageUrl: "https://example.com/img.jpg",
         price,
       });

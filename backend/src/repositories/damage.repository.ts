@@ -21,7 +21,7 @@ export class DamageRepository implements IDamageRepository {
     price: number;
   }): Promise<IDamage> {
     const damage = await DamageModel.create(data);
-    return damage.toObject() as IDamage;
+    return damage.toObject();
   }
 
   async update(

@@ -1,12 +1,12 @@
-import { describe, it, expect, vi } from "vitest";
-import type { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
+import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { validateMiddleware } from "../../src/middlewares/validate.middleware";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeReq(overrides: Partial<Request> = {}): Request {
-  return { body: {}, params: {}, ...overrides } as unknown as Request;
+  return { body: {}, params: {}, ...overrides } as Request;
 }
 
 function makeRes() {
@@ -69,7 +69,7 @@ describe("validateMiddleware", () => {
 
     validateMiddleware(schema)(req, res, next);
 
-    const payload = vi.mocked(res.json).mock.calls[0][0] as { message: string };
+    const payload: { message: string } = vi.mocked(res.json).mock.calls[0][0];
     expect(payload.message).toContain("Name is required");
   });
 
