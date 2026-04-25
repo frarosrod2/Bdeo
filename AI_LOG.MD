@@ -1,31 +1,40 @@
 # AI Log - Claims Management System
 
-Este documento detalla la metodología de trabajo seguida utilizando herramientas de Inteligencia Artificial y la supervisión técnica aplicada para garantizar el cumplimiento de los requisitos del ejercicio.
+This document details the working methodology followed using Artificial Intelligence tools and the technical oversight applied to ensure compliance with the exercise requirements.
 
-## 1. Estrategia de Spec-Driven Development (SDD)
-Siguiendo las recomendaciones del ejercicio, se utilizó la IA para:
-* **Definición del Contrato:** Generación del esquema inicial de OpenAPI (Swagger) basado en las entidades `Claim` y `Damage`.
-* **Sincronización:** Se utilizó el contrato como "fuente de verdad" para que la IA generase los tipos de TypeScript tanto en el backend como en el frontend, evitando discrepancias en los modelos de datos.
+## 1. Spec-Driven Development (SDD) Strategy
 
-## 2. Backend & Calidad de Pruebas (Cobertura >95%)
-Para alcanzar la cobertura exigida del 95%, se procedió de la siguiente manera:
-* **Generación de Tests:** Se empleó Claude para escribir el boilerplate de las pruebas unitarias y de integración.
-* **Supervisión y Corrección:**
-    * Se revisaron manualmente todos los operadores de aserción (`as`) para evitar falsos positivos y asegurar que los tipos de TypeScript fuesen correctos.
-    * Se validó la lógica de los tests de integración para asegurar que el cálculo del `Total Amount` en el servidor sumase correctamente los precios de los daños.
-    * Se implementó manualmente el patrón de **Inyección de Dependencias (DI)** para desacoplar los servicios de los controladores, facilitando el uso de *mocks* en los tests.
+Following the exercise recommendations, AI was used for:
 
-## 3. Frontend: Angular 20, Zoneless y Reactividad
-La IA tendía a generar código basado en versiones antiguas o patrones estándar de Angular. Se aplicó un criterio técnico estricto para modernizar la solución:
-* **Arquitectura:** Se corrigió el código generado por la IA para implementar **ChangeDetectionStrategy.OnPush** y configurar la aplicación como **Zoneless**, alineándolo con las características de Angular 20.
-* **Angular Material:** Se migraron los componentes de UI a las APIs más recientes de Angular Material.
-* **Lógica Reactiva:** Se supervisó la implementación de **Reactive Forms** y la gestión de estado para que el `Total Amount` se actualice en tiempo real en la vista de detalle al añadir, editar o borrar daños.
-* **Interfaces de API:** Se crearon manualmente las interfaces del servicio de frontend para asegurar que el mapeo de datos entre el backend y los componentes fuese 100% coherente.
+- **Contract Definition:** Generation of the initial OpenAPI (Swagger) schema based on the `Claim` and `Damage` entities.
+- **Synchronization:** The contract was used as a "source of truth" for the AI to generate TypeScript types on both the backend and frontend, avoiding discrepancies in data models.
 
-## 4. Implementación de Reglas de Negocio
-Se prestó especial atención a la corrección de la IA en reglas complejas:
-* **Restricciones de Estado:** Validación manual para que los daños solo sean editables si el estado de la reclamación es `Pending`.
-* **Lógica de Cierre:** Implementación de la validación que requiere una descripción de más de 100 caracteres si existe un daño con severidad alta para permitir el estado `Finished`.
+## 2. Backend & Test Quality (Coverage >95%)
 
-## 5. Conclusión
-El uso de la IA permitió acelerar la escritura de código repetitivo y la estructura de tests, pero la **arquitectura final, la optimización de Angular y la integridad de las reglas de negocio** fueron supervisadas y corregidas manualmente para cumplir con los estándares de escalabilidad y mantenibilidad requeridos.
+To achieve the required 95% coverage, the following approach was taken:
+
+- **Test Generation:** Claude was used to write the boilerplate for unit and integration tests.
+- **Oversight and Correction:**
+  - All assertion operators (`as`) were manually reviewed to avoid false positives and ensure TypeScript types were correct.
+  - The integration test logic was validated to ensure the server-side `Total Amount` calculation correctly summed damage prices.
+  - The **Dependency Injection (DI)** pattern was manually implemented to decouple services from controllers, making it easier to use _mocks_ in tests.
+
+## 3. Frontend: Angular 20, Zoneless and Reactivity
+
+The AI tended to generate code based on older versions or standard Angular patterns. Strict technical judgment was applied to modernize the solution:
+
+- **Architecture:** AI-generated code was corrected to implement **ChangeDetectionStrategy.OnPush** and configure the application as **Zoneless**, aligning it with Angular 20 features.
+- **Angular Material:** UI components were migrated to the latest Angular Material APIs.
+- **Reactive Logic:** The implementation of **Reactive Forms** and state management was overseen so that the `Total Amount` updates in real time in the detail view when damages are added, edited, or deleted.
+- **API Interfaces:** Frontend service interfaces were created manually to ensure data mapping between the backend and components was 100% consistent.
+
+## 4. Business Rule Implementation
+
+Special attention was paid to correcting the AI on complex rules:
+
+- **State Restrictions:** Manual validation to ensure damages are only editable when the claim status is `Pending`.
+- **Closing Logic:** Implementation of the validation requiring a description longer than 100 characters when a high-severity damage exists, in order to allow the `Finished` status.
+
+## 5. Conclusion
+
+The use of AI accelerated the writing of repetitive code and test scaffolding, but the **final architecture, Angular optimizations, and business rule integrity** were manually overseen and corrected to meet the required standards of scalability and maintainability.
